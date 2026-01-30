@@ -7,7 +7,7 @@ This repository contains an efficient fully-fused implementation of [SSIM](https
 - Gaussians are symmetric in nature leading to fewer computations.
 - Single convolution pass for multiple statistics.
 
-As per the original SSIM paper, this implementation uses `11x11` sized convolution kernel. The weights for it have been hardcoded and this is another reason for it's speed. This implementation currently only supports **2D images** but with **variable number of channels** and **batch size**.
+As per the original SSIM paper, this implementation uses `11x11` sized convolution kernel. The weights for it have been hardcoded and this is another reason for it's speed. This implementation currently supports **2D (CUDA, Metal, ROCm) and 3D (CUDA only) images** with **variable number of channels** and **batch size**.
 
 ## Hardware Compatibility
 
@@ -180,7 +180,8 @@ from fused_ssim import fused_ssim
 
 # predicted_image, gt_image: [BS, CH, H, W]
 # predicted_image is differentiable
-gt_image = torch.rand(2, 3, 1080, 1920)
+device = 'cuda' #or 'mps', 'xpu'
+gt_image = torch.rand(2, 3, 1080, 1920, device=device)
 predicted_image = torch.nn.Parameter(torch.rand_like(gt_image))
 ssim_value = fused_ssim(predicted_image, gt_image)
 ```
@@ -198,14 +199,42 @@ with torch.no_grad():
 
 ## Constraints
 - Currently, only one of the images is allowed to be differentiable i.e. only the first image can be `nn.Parameter`.
-- Limited to 2D images.
 - Images must be normalized to range `[0, 1]`.
 - Standard `11x11` convolutions supported.
+- 3D images only supported in NVIDIA CUDA.
 
 ## Performance
 This implementation is 5-8x faster than the previous fastest (to the best of my knowledge) differentiable SSIM implementation [pytorch-msssim](https://github.com/VainF/pytorch-msssim).
 
 <img src="./images/training_time_4090.png" width="30%"> <img src="./images/inference_time_4090.png" width="30%"> <img src="./images/inference_time_m1_pro.png" width="30%">
+
+## 3D data
+
+A simple extension of Fused-SSIM logic to 3D is likely to struggle due to the size of shared memory. It is circumvented by:
+1.  Maintaining the 2D convolution setup on individual XY slices,
+2.  Calculating the Z axis convolution and final SSIM through a ring buffer (one depth row per thread). 
+
+Only available for NVIDIA CUDA (```ssim3d.cu```).
+
+### Usage
+
+```python
+import torch
+from fused_ssim import fused_ssim3d
+
+# predicted_image, gt_image: [BS, CH, D, H, W]
+# predicted_image is differentiable
+device = 'cuda' #only cuda supported
+gt_image = torch.rand(2, 3, 96, 96, 96, device=device)
+predicted_image = torch.nn.Parameter(torch.rand_like(gt_image))
+ssim_value = fused_ssim3d(predicted_image, gt_image)
+```
+
+### Performance
+
+This implementation is ~11x faster than baseline [pytorch-msssim](https://github.com/VainF/pytorch-msssim) in 3D.
+
+<img src="./images/3D_training_time-nvidia-rtx-a5000.png" width="30%"> <img src="./images/3D_inference_time-nvidia-rtx-a5000.png" width="30%"> 
 
 ## BibTeX
 If you leverage fused SSIM for your research work, please cite our main paper:
