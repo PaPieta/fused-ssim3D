@@ -1,4 +1,4 @@
-# 3D train image test is run on a brain MRI scan extracted from the 1st channel of the first volume in the BraTS2020 dataset:
+# train_image_3D test is run on a brain MRI scan extracted from the 2nd channel of the first volume in the BraTS2020 dataset:
 # [1] B. H. Menze, et al. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", 
 #       IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
 # [2] S. Bakas, et al., "Advancing The Cancer Genome Atlas glioma MRI collections with expert segmentation labels and radiomic features", 

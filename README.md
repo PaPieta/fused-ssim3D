@@ -211,7 +211,7 @@ This implementation is 5-8x faster than the previous fastest (to the best of my 
 ## 3D data
 
 A simple extension of Fused-SSIM logic to 3D is likely to struggle due to the size of shared memory. It is circumvented by:
-1.  Maintaining the 2D convolution setup on individual XY slices,
+1.  Maintaining the 2D convolution logic on individual XY slices,
 2.  Calculating the Z axis convolution and final SSIM through a ring buffer (one depth row per thread). 
 
 Only available for NVIDIA CUDA (```ssim3d.cu```).
